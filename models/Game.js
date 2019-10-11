@@ -13,6 +13,7 @@ const Game = new keystone.List('Game', {
 
 Game.add({
 	title: { type: String, required: true },
+	template: { type: Types.Select, options: 'template1, template2', default: 'template1', index: true },
 	state: { type: Types.Select, options: 'draft, published, ended, archived', default: 'draft', index: true },
 	author: { type: Types.Relationship, ref: 'User', index: true },
 	publishedDate: { type: Types.Date, index: true, dependsOn: { state: 'published' } },
@@ -29,5 +30,5 @@ Game.schema.virtual('content.full').get(function () {
 	return this.content.extended || this.content.brief;
 });
 
-Game.defaultColumns = 'title, state|20%, author|20%, publishedDate|10%, endDate|10%';
+Game.defaultColumns = 'title, template, state, author, publishedDate, endDate';
 Game.register();

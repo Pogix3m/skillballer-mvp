@@ -17,4 +17,4 @@ Gallery.add({
 	images: { type: Types.CloudinaryImages },
 });
 
-Gallery.register();
+// Gallery.register();

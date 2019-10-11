@@ -36,7 +36,8 @@ module.exports = function () {
 	_helpers.ifeq = function (a, b, options) {
 		if (a == b) { // eslint-disable-line eqeqeq
 			return options.fn(this);
-		} else {
+		}
+		else {
 			return options.inverse(this);
 		}
 	};
