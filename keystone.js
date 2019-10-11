@@ -57,6 +57,7 @@ keystone.set('nav', {
 	galleries: 'galleries',
 	enquiries: 'enquiries',
 	users: 'users',
+	games: ['games', 'game-categories'],
 });
 
 // Start Keystone to connect to your database and initialise the web server
