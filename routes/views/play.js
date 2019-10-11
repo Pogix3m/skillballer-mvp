@@ -1,28 +1,26 @@
-var keystone = require('keystone');
-var async = require('async');
+const keystone = require('keystone');
+const async = require('async');
 const _helpers = require('../helpers');
 
 exports = module.exports = function (req, res) {
 
-	var view = new keystone.View(req, res);
-	var locals = res.locals;
+	const view = new keystone.View(req, res);
+	const locals = res.locals;
 
 	// Init locals
-	locals.section = 'blog';
+	locals.section = 'play';
 	locals.filters = {
 		category: req.params.category,
 	};
 	locals.data = {
-		records: [],
 		categories: [],
-		route: 'blog',
+		records: [], // main list
+		route: 'play', // used in pagination
 	};
 
 	// Load all categories
 	view.on('init', function (next) {
-
-		keystone.list('PostCategory').model.find().sort('name').exec(function (err, results) {
-
+		keystone.list('GameCategory').model.find().sort('name').exec(function (err, results) {
 			if (err || !results.length) {
 				return next(err);
 			}
@@ -32,8 +30,8 @@ exports = module.exports = function (req, res) {
 			// Load the counts for each category
 			async.each(locals.data.categories, function (category, next) {
 
-				keystone.list('Post').model.count().where('categories').in([category.id]).exec(function (err, count) {
-					category.postCount = count;
+				keystone.list('Game').model.count().where('categories').in([category.id]).exec(function (err, count) {
+					category.gameCount = count;
 					next(err);
 				});
 
@@ -47,7 +45,7 @@ exports = module.exports = function (req, res) {
 	view.on('init', function (next) {
 
 		if (req.params.category) {
-			keystone.list('PostCategory').model.findOne({ key: locals.filters.category }).exec(function (err, result) {
+			keystone.list('GameCategory').model.findOne({ key: locals.filters.category }).exec(function (err, result) {
 				locals.data.category = result;
 				next(err);
 			});
@@ -56,10 +54,10 @@ exports = module.exports = function (req, res) {
 		}
 	});
 
-	// Load the posts
+	// Load the games
 	view.on('init', function (next) {
 
-		var q = keystone.list('Post').paginate({
+		const q = keystone.list('Game').paginate({
 			page: req.query.page || 1,
 			..._helpers.pages,
 			filters: {
@@ -80,5 +78,5 @@ exports = module.exports = function (req, res) {
 	});
 
 	// Render the view
-	view.render('blog');
+	view.render('play');
 };

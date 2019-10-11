@@ -9,8 +9,21 @@ var linkTemplate = _.template('<a href="<%= url %>"><%= text %></a>');
 var scriptTemplate = _.template('<script src="<%= src %>"></script>');
 var cssLinkTemplate = _.template('<link href="<%= href %>" rel="stylesheet">');
 
-module.exports = function () {
+const createTagList = (route, autolink, separator, tags) => {
+	var tagNames = _.map(tags, 'name');
 
+	if (autolink) {
+		return _.map(tags, function (tag) {
+			return linkTemplate({
+				url: (`/${route}/${tag.key}`),
+				text: _.escape(tag.name),
+			});
+		}).join(separator);
+	}
+	return _.escape(tagNames.join(separator));
+};
+
+module.exports = function () {
 	var _helpers = {};
 
 	/**
@@ -87,33 +100,6 @@ module.exports = function () {
 	// By default, categories are separated by commas.
 	// input. categories:['tech', 'js']
 	// output. 'Filed Undder <a href="blog/tech">tech</a>, <a href="blog/js">js</a>'
-
-	_helpers.categoryList = function (categories, options) {
-		var autolink = _.isString(options.hash.autolink) && options.hash.autolink === 'false' ? false : true;
-		var separator = _.isString(options.hash.separator) ? options.hash.separator : ', ';
-		var prefix = _.isString(options.hash.prefix) ? options.hash.prefix : '';
-		var suffix = _.isString(options.hash.suffix) ? options.hash.suffix : '';
-		var output = '';
-
-		function createTagList (tags) {
-			var tagNames = _.map(tags, 'name');
-
-			if (autolink) {
-				return _.map(tags, function (tag) {
-					return linkTemplate({
-						url: ('/blog/' + tag.key),
-						text: _.escape(tag.name),
-					});
-				}).join(separator);
-			}
-			return _.escape(tagNames.join(separator));
-		}
-
-		if (categories && categories.length) {
-			output = prefix + createTagList(categories) + suffix;
-		}
-		return new hbs.SafeString(output);
-	};
 
 	/**
 	 * KeystoneJS specific helpers
@@ -196,16 +182,33 @@ module.exports = function () {
 		return ('/blog/post/' + postSlug);
 	};
 
-	// might be a ghost helper
-	// used for pagination urls on blog
-	_helpers.pageUrl = function (pageNumber, options) {
-		return '/blog?page=' + pageNumber;
-	};
-
 	// create the category url for a blog-category page
 	_helpers.categoryUrl = function (categorySlug, options) {
 		return ('/blog/' + categorySlug);
 	};
+
+	_helpers.gameUrl = function (gameSlug, options) {
+		return ('/play/game/' + gameSlug);
+	};
+	_helpers.gameCategoryUrl = function (categorySlug, options) {
+		return ('/play/' + categorySlug);
+	};
+	_helpers.gamePageUrl = function (pageNumber, options) {
+		return '/play?page=' + pageNumber;
+	};
+	_helpers.categoryList = function (route, categories, options) {
+		var autolink = _.isString(options.hash.autolink) && options.hash.autolink === 'false' ? false : true;
+		var separator = _.isString(options.hash.separator) ? options.hash.separator : ', ';
+		var prefix = _.isString(options.hash.prefix) ? options.hash.prefix : '';
+		var suffix = _.isString(options.hash.suffix) ? options.hash.suffix : '';
+		var output = '';
+
+		if (categories && categories.length) {
+			output = prefix + createTagList(route, autolink, separator, categories) + suffix;
+		}
+		return new hbs.SafeString(output);
+	};
+
 
 	// ### Pagination Helpers
 	// These are helpers used in rendering a pagination system for content
@@ -215,19 +218,26 @@ module.exports = function () {
 	* expecting the data.posts context or an object literal that has `previous` and `next` properties
 	* ifBlock helpers in hbs - http://stackoverflow.com/questions/8554517/handlerbars-js-using-an-helper-function-in-a-if-statement
 	* */
-	_helpers.ifHasPagination = function (postContext, options) {
+
+	// might be a ghost helper
+	// used for pagination urls
+	_helpers.pageUrl = function (route, pageNumber, options) {
+		return `/${route}?page=${pageNumber}`;
+	};
+
+	_helpers.ifHasPagination = function (context, options) {
 		// if implementor fails to scope properly or has an empty data set
 		// better to display else block than throw an exception for undefined
-		if (_.isUndefined(postContext)) {
+		if (_.isUndefined(context)) {
 			return options.inverse(this);
 		}
-		if (postContext.next || postContext.previous) {
+		if (context.next || context.previous) {
 			return options.fn(this);
 		}
 		return options.inverse(this);
 	};
 
-	_helpers.paginationNavigation = function (pages, currentPage, totalPages, options) {
+	_helpers.paginationNavigation = function (route, pages, currentPage, totalPages, options) {
 		var html = '';
 
 		// pages should be an array ex.  [1,2,3,4,5,6,7,8,9,10, '....']
@@ -247,7 +257,7 @@ module.exports = function () {
 			}
 
 			// get the pageUrl using the integer value
-			var pageUrl = _helpers.pageUrl(page);
+			var pageUrl = _helpers.pageUrl(route, page);
 			// wrapup the html
 			html += '<li' + liClass + '>' + linkTemplate({ url: pageUrl, text: pageText }) + '</li>\n';
 		});
@@ -256,20 +266,20 @@ module.exports = function () {
 
 	// special helper to ensure that we always have a valid page url set even if
 	// the link is disabled, will default to page 1
-	_helpers.paginationPreviousUrl = function (previousPage, totalPages) {
+	_helpers.paginationPreviousUrl = function (route, previousPage, totalPages) {
 		if (previousPage === false) {
 			previousPage = 1;
 		}
-		return _helpers.pageUrl(previousPage);
+		return _helpers.pageUrl(route, previousPage);
 	};
 
 	// special helper to ensure that we always have a valid next page url set
 	// even if the link is disabled, will default to totalPages
-	_helpers.paginationNextUrl = function (nextPage, totalPages) {
+	_helpers.paginationNextUrl = function (route, nextPage, totalPages) {
 		if (nextPage === false) {
 			nextPage = totalPages;
 		}
-		return _helpers.pageUrl(nextPage);
+		return _helpers.pageUrl(route, nextPage);
 	};
 
 
